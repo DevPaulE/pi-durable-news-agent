@@ -1,5 +1,9 @@
 # Pi Durable News Agent
 
+> **Fork of [disler/pi-durable-news-agent](https://github.com/disler/pi-durable-news-agent) — original by [IndyDevDan](https://www.youtube.com/@indydevdan).**
+> This fork adds a [Decision Record](#decision-record) documenting architecture decisions made here.
+> **Paul Estares is accountable for this fork and its contents.**
+
 > **This agent does not wait for you to work. It works for you, then waits, then keeps working.**
 > A proactive news agent built on pi-durable that sorts every story into Hype, Facts and Signal with jev, on your Mac, an always-on Mac mini or a cloud VM.
 
