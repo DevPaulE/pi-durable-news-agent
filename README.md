@@ -311,6 +311,23 @@ MIT — see [`LICENSE`](LICENSE).
 
 ---
 
+## Decision Record
+
+Key architecture decisions and trade-offs made building this agent. Each entry
+is a judgment call where the right answer wasn't obvious.
+
+| # | Decision | Context | Alternatives considered | Why this won |
+|---|---|---|---|---|
+| 1 | **Durable agent over chat interface** | The agent runs on a cron tick with SQLite checkpointing, not a chat you prompt | A promptable chat (more familiar), a serverless function (cheaper idle) | Attention is the scarce resource. A chat waits for you; this agent works *before* you ask. Durability means a SIGKILL mid-sweep resumes at the last checkpoint and never pays twice |
+| 2 | **jev classifier at every gate, not one LLM call** | Relevance, worth, story-dedup, importance, and hype/facts/signal are all decided by a cheap classifier before the LLM sees an item | Single LLM prompt for all judgments (simpler), or no classifier (just rank by recency) | At ~$0.00004/call, jev can judge every item. One LLM call for all items would cost more and conflate separate judgment types. The classifier approach decouples: the LLM only writes cards for what survives |
+| 3 | **Three independent clients over one UI** | Browser (Vue 3), terminal TUI, and CLI all read one API through shared SDK reducers | One canonical UI (browser-only), or API-only with no clients | A browser is where you browse news; a TUI is where you check from tmux; a CLI is where you script. The capability-list test fails if any client is missing a feature — the clients keep each other honest |
+| 4 | **Content-hash skip over TTL-based fetch** | Unchanged sources are detected by content hash, not a fixed refresh interval | Fixed TTL (every source checked every N minutes), or TTL with jitter | A source that hasn't changed doesn't need re-reading by jev. Content hash skips the whole pipeline: no fetch, no parse, no judgment. This is why the "nothing new" sweep costs $0.003 — almost nothing |
+| 5 | **Hype/Facts/Signal as scores, not a choice** | Every item gets three independent scores instead of being classified into one bucket | Single-label: "this is Hype" or "this is Signal" | Real items mix: a hype headline can contain real facts; a Signal item can have Hype framing. Three scores capture the mixture. The `hfs` command uses jev's `score` type, not its `choice` type |
+| 6 | **Free search chain over one paid engine** | Bing News RSS → Google News RSS → Hacker News, with Firecrawl as the paid upgrade | Firecrawl-only (paid), or DuckDuckGo-only (free but rate-limited) | A single search engine can fail (captcha, 403, rate limit). The chain rests the failing engine and tries the next. Free until you need the speed, then Firecrawl with daily credit caps. `dna doctor` shows each engine's health |
+| 7 | **Cron-tick trigger over push/stream** | A cron job polls `/v1/workflows/news-sweep` every minute; the schedule (every 5 min by default) decides which ticks start work | Webhook push (source notifies us), SSE subscription, always-on loop | Sources don't push. SSE requires a persistent connection. A cron tick is the simplest durable trigger — if the process dies, systemd/launchd restarts it and the next tick fires. No state to recover |
+
+---
+
 ## Want To Master Agentic Engineering?
 
 <p align="center">
